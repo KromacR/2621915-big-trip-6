@@ -1,4 +1,4 @@
-import { createElement } from '../render.js';
+import AbstractView from '../framework/view/abstract-view.js';
 
 const pointMarkup = (point, destination, offers) => {
   const { type, basePrice, isFavorite, dateFrom, dateTo } = point;
@@ -51,26 +51,29 @@ const pointMarkup = (point, destination, offers) => {
   `;
 };
 
-export default class PointView {
-  constructor({ point, destination, offers }) {
-    this.point = point;
-    this.destination = destination;
-    this.offers = offers;
-    this.elem = null;
+export default class PointView extends AbstractView {
+  #point = null;
+  #destination = null;
+  #offers = null;
+  #handleEditClick = null;
+
+  constructor({ point, destination, offers, onEditClick }) {
+    super();
+    this.#point = point;
+    this.#destination = destination;
+    this.#offers = offers;
+    this.#handleEditClick = onEditClick;
+
+    this.element.querySelector('.event__rollup-btn')
+      .addEventListener('click', this.#editClickHandler);
   }
 
-  getTemplate() {
-    return pointMarkup(this.point, this.destination, this.offers);
+  get template() {
+    return pointMarkup(this.#point, this.#destination, this.#offers);
   }
 
-  getElement() {
-    if (!this.elem) {
-      this.elem = createElement(this.getTemplate());
-    }
-    return this.elem;
-  }
-
-  removeElement() {
-    this.elem = null;
-  }
+  #editClickHandler = (evt) => {
+    evt.preventDefault();
+    this.#handleEditClick();
+  };
 }
