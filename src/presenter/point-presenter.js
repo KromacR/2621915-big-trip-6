@@ -113,4 +113,14 @@ export default class PointPresenter {
   #handleFormClose = () => {
     this.#replaceFormToPoint();
   };
+
+  destroy() {
+    if (this.#pointComponent) {
+      this.#pointComponent.element.remove();
+    }
+
+    if (this.#editFormComponent) {
+      this.#editFormComponent.element.remove();
+    }
+  }
 }
