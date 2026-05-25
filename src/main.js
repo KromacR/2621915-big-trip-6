@@ -1,12 +1,4 @@
-import BoardPresenter from './presenter/board-presenter.js';
-import PointsModel from './model/points-model.js';
+import MainPresenter from './presenter/main-presenter.js';
 
-const tripEventsContainer = document.querySelector('.trip-events');
-const pointsModel = new PointsModel();
-
-const tripPresenter = new BoardPresenter({
-  container: tripEventsContainer,
-  pointsModel
-});
-
-tripPresenter.init();
+const mainPresenter = new MainPresenter();
+mainPresenter.init();

@@ -1,108 +1,102 @@
-const CITIES = ['Amsterdam', 'Geneva', 'Chamonix'];
-
-const TYPES = [
-  'taxi',
-  'bus',
-  'train',
-  'ship',
-  'drive',
-  'flight',
-  'check-in',
-  'sightseeing',
-  'restaurant'
+const destinations = [
+  {
+    id: '1',
+    name: 'Amsterdam',
+    description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+    pictures: [
+      {src: 'https://loremflickr.com/248/152?random=1'},
+      {src: 'https://loremflickr.com/248/152?random=2'},
+      {src: 'https://loremflickr.com/248/152?random=3'}
+    ]
+  },
+  {
+    id: '2',
+    name: 'Geneva',
+    description: 'Cras aliquet varius magna, non porta ligula feugiat eget.',
+    pictures: [
+      {src: 'https://loremflickr.com/248/152?random=4'},
+      {src: 'https://loremflickr.com/248/152?random=5'},
+      {src: 'https://loremflickr.com/248/152?random=6'}
+    ]
+  },
+  {
+    id: '3',
+    name: 'Chamonix',
+    description: 'Fusce tristique felis at fermentum pharetra.',
+    pictures: [
+      {src: 'https://loremflickr.com/248/152?random=7'},
+      {src: 'https://loremflickr.com/248/152?random=8'},
+      {src: 'https://loremflickr.com/248/152?random=9'}
+    ]
+  }
 ];
 
-const DESCRIPTIONS = [
-  'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
-  'Cras aliquet varius magna, non porta ligula feugiat eget.',
-  'Fusce tristique felis at fermentum pharetra.',
-  'Aliquam id orci ut lectus varius viverra.',
-  'Nullam nunc ex, convallis sed finibus eget, sollicitudin eget ante.'
+const offers = [
+  {
+    type: 'taxi',
+    offers: [
+      {id: '1', title: 'Order Uber', price: 20}
+    ]
+  },
+  {
+    type: 'flight',
+    offers: [
+      {id: '4', title: 'Add luggage', price: 50},
+      {id: '5', title: 'Switch to comfort', price: 80}
+    ]
+  },
+  {
+    type: 'drive',
+    offers: [
+      {id: '8', title: 'Rent a car', price: 200}
+    ]
+  },
+  {
+    type: 'check-in',
+    offers: [
+      {id: '11', title: 'Add breakfast', price: 50}
+    ]
+  },
+  {
+    type: 'sightseeing',
+    offers: [
+      {id: '14', title: 'Book tickets', price: 40},
+      {id: '15', title: 'Lunch in city', price: 30}
+    ]
+  }
 ];
 
-const OFFERS = {
-  taxi: ['Extra luggage', 'Child seat'],
-  bus: ['Wi-Fi', 'Snacks'],
-  train: ['First class', 'Dining car'],
-  ship: ['Cabin upgrade', 'Excursion'],
-  drive: ['GPS', 'Child seat'],
-  flight: ['Add luggage', 'Priority check-in'],
-  'check-in': ['Breakfast included', 'Late check-out'],
-  sightseeing: ['Guide', 'Skip the line'],
-  restaurant: ['Wine pairing', 'Dessert']
-};
+const points = [
+  {
+    id: '1',
+    type: 'taxi',
+    destinationId: '1',
+    offersIds: ['1'],
+    basePrice: 20,
+    dateFrom: '2019-03-18T10:30',
+    dateTo: '2019-03-18T11:00',
+    isFavorite: true
+  },
+  {
+    id: '2',
+    type: 'flight',
+    destinationId: '3',
+    offersIds: ['4', '5'],
+    basePrice: 160,
+    dateFrom: '2019-03-18T12:25',
+    dateTo: '2019-03-18T13:35',
+    isFavorite: false
+  },
+  {
+    id: '3',
+    type: 'drive',
+    destinationId: '3',
+    offersIds: ['8'],
+    basePrice: 160,
+    dateFrom: '2019-03-18T14:30',
+    dateTo: '2019-03-18T16:05',
+    isFavorite: true
+  }
+];
 
-
-const mockDestinations = CITIES.map((city, index) => ({
-  id: `dest-${index}`,
-  description: DESCRIPTIONS[Math.floor(Math.random() * DESCRIPTIONS.length)],
-  name: city,
-  pictures: [
-    {
-      src: `https://loremflickr.com/248/152?random=${Math.random()}`,
-      description: `${city} view`
-    }
-  ]
-}));
-
-const mockOffers = Object.entries(OFFERS).map(([type, titles]) => ({
-  type,
-  offers: titles.map((title, index) => ({
-    id: `offer-${type}-${index + 1}`,
-    title,
-    price: Math.floor(Math.random() * 200) + 20
-  }))
-}));
-
-const getRandomElement = (items) =>
-  items[Math.floor(Math.random() * items.length)];
-
-const getRandomDate = () => {
-  const start = new Date(2019, 2, 18);
-  const end = new Date(2019, 2, 25);
-
-  return new Date(start.getTime() + Math.random() * (end - start));
-};
-
-const formatDate = (date) => {
-  const pad = (n) => n.toString().padStart(2, '0');
-
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(
-    date.getDate()
-  )}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
-};
-
-const getRandomOffers = (offers) => {
-  const shuffled = [...offers].sort(() => 0.5 - Math.random());
-  const count = Math.floor(Math.random() * (offers.length + 1));
-
-  return shuffled.slice(0, count).map((offer) => offer.id);
-};
-
-const getRandomPoint = () => {
-  const type = getRandomElement(TYPES);
-
-  const typeOffers =
-    mockOffers.find((offer) => offer.type === type)?.offers ?? [];
-
-  const dateFrom = getRandomDate();
-  const dateTo = new Date(
-    dateFrom.getTime() + Math.random() * 3 * 60 * 60 * 1000
-  );
-
-  return {
-    id: crypto.randomUUID(),
-    type,
-    destination: getRandomElement(mockDestinations).id,
-    basePrice: Math.floor(Math.random() * 1000) + 100,
-    dateFrom: formatDate(dateFrom),
-    dateTo: formatDate(dateTo),
-    isFavorite: Math.random() > 0.5,
-    offers: getRandomOffers(typeOffers)
-  };
-};
-
-const generatePoints = (count = 5) =>
-  Array.from({ length: count }, getRandomPoint);
-
-export { mockDestinations, mockOffers, getRandomPoint, generatePoints };
+export{destinations, offers, points};
