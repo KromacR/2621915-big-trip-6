@@ -1,27 +1,39 @@
-import AbstractView from '../framework/view/abstract-view.js';
+import AbstractStatefulView from '../framework/view/abstract-stateful-view.js';
 
-const createEditFormTemplate = (point, destination, offers) => {
-  const {type, basePrice, dateFrom, dateTo} = point;
+function formatDate(dateString) {
+  const date = new Date(dateString);
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = String(date.getFullYear()).slice(2);
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
 
-  const createOfferSelectorTemplate = (offer, isChecked) => `
-    <div class="event__offer-selector">
-      <input class="event__offer-checkbox  visually-hidden"
-             id="event-offer-${offer.id}-1"
-             type="checkbox"
-             name="event-offer-${offer.id}"
-             ${isChecked ? 'checked' : ''}>
-      <label class="event__offer-label" for="event-offer-${offer.id}-1">
-        <span class="event__offer-title">${offer.title}</span>
-        &plus;&euro;&nbsp;
-        <span class="event__offer-price">${offer.price}</span>
-      </label>
-    </div>
-  `;
+  return `${day}/${month}/${year} ${hours}:${minutes}`;
+}
 
-  const offersTemplate = offers
-    .map((offer) => createOfferSelectorTemplate(offer, point.offersIds.includes(offer.id)))
-    .join('');
+const createEditFormTemplate = (state, destination, allOffers) => {
+  const {type, basePrice, dateFrom, dateTo, selectedOffersIds} = state;
 
+  const createOfferSelectorTemplate = (offer) => {
+    const isChecked = selectedOffersIds.includes(offer.id);
+    return `
+      <div class="event__offer-selector">
+        <input class="event__offer-checkbox  visually-hidden"
+               id="event-offer-${offer.id}-1"
+               type="checkbox"
+               name="event-offer-${offer.id}"
+               ${isChecked ? 'checked' : ''}>
+        <label class="event__offer-label" for="event-offer-${offer.id}-1">
+          <span class="event__offer-title">${offer.title}</span>
+          &plus;&euro;&nbsp;
+          <span class="event__offer-price">${offer.price}</span>
+        </label>
+      </div>
+    `;
+  };
+
+  const offersForType = allOffers.find((offerGroup) => offerGroup.type === type)?.offers || [];
+  const offersTemplate = offersForType.map((offer) => createOfferSelectorTemplate(offer)).join('');
 
   return `
     <li class="trip-events__item">
@@ -130,10 +142,10 @@ const createEditFormTemplate = (point, destination, offers) => {
 
           <section class="event__section  event__section--destination">
             <h3 class="event__section-title  event__section-title--destination">Destination</h3>
-            <p class="event__destination-description">${destination.description}</p>
+            <p class="event__destination-description">${destination.description || ''}</p>
             <div class="event__photos-container">
               <div class="event__photos-tape">
-                ${destination.pictures.map((pic) => `
+                ${(destination.pictures || []).map((pic) => `
                   <img class="event__photo" src="${pic.src}" alt="${pic.description}">
                 `).join('')}
               </div>
@@ -145,35 +157,119 @@ const createEditFormTemplate = (point, destination, offers) => {
   `;
 };
 
-function formatDate(dateString) {
-  const date = new Date(dateString);
-  const day = String(date.getDate()).padStart(2, '0');
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const year = String(date.getFullYear()).slice(2);
-  const hours = String(date.getHours()).padStart(2, '0');
-  const minutes = String(date.getMinutes()).padStart(2, '0');
+export default class EditFormView extends AbstractStatefulView {
+  #allOffers = null;
+  #allDestinations = null;
+  #onFormSubmit = null;
+  #onCloseClick = null;
+  #destination = null;
 
-  return `${day}/${month}/${year} ${hours}:${minutes}`;
-}
-
-export default class EditFormView extends AbstractView {
-  constructor(point, destination, offers, onFormSubmit, onCloseClick) {
+  constructor(point, destination, allOffers, allDestinations, onFormSubmit, onCloseClick) {
     super();
-    this.point = point;
-    this.destination = destination;
-    this.offers = offers;
-    this._onFormSubmit = onFormSubmit;
-    this._onCloseClick = onCloseClick;
+    this._state = EditFormView.convertPointToState(point);
+    this.#destination = destination;
+    this.#allOffers = allOffers;
+    this.#allDestinations = allDestinations;
+    this.#onFormSubmit = onFormSubmit;
+    this.#onCloseClick = onCloseClick;
+
+    this._setInnerHandlers();
+  }
+
+  static convertPointToState(point) {
+    return {
+      type: point.type,
+      basePrice: point.basePrice,
+      dateFrom: point.dateFrom,
+      dateTo: point.dateTo,
+      isFavorite: point.isFavorite,
+      selectedOffersIds: [...point.offersIds],
+      destinationId: point.destinationId
+    };
   }
 
   get template() {
-    return createEditFormTemplate(this.point, this.destination, this.offers);
+    return createEditFormTemplate(this._state, this.#destination, this.#allOffers);
+  }
+
+  _restoreHandlers() {
+    this._setInnerHandlers();
+    this.setEventListeners();
+  }
+
+  _setInnerHandlers() {
+    this.onTypeChange = this.#handleTypeChange.bind(this);
+    this.onOfferChange = this.#handleOfferChange.bind(this);
+    this.onDestinationChange = this.#handleDestinationChange.bind(this);
   }
 
   setEventListeners() {
-    this.element.querySelector('form')
-      .addEventListener('submit', this._onFormSubmit);
-    this.element.querySelector('.event__rollup-btn')
-      .addEventListener('click', this._onCloseClick);
+    const form = this.element.querySelector('form');
+    if (form) {
+      form.addEventListener('submit', this.#onFormSubmit);
+    }
+
+    const rollupBtn = this.element.querySelector('.event__rollup-btn');
+    if (rollupBtn) {
+      rollupBtn.addEventListener('click', this.#onCloseClick);
+    }
+
+    this.element.querySelectorAll('.event__type-input').forEach((input) => {
+      input.addEventListener('change', this.onTypeChange);
+    });
+
+    this.element.querySelectorAll('.event__offer-checkbox').forEach((checkbox) => {
+      checkbox.addEventListener('change', this.onOfferChange);
+    });
+
+    const destinationInput = this.element.querySelector('.event__input--destination');
+    if (destinationInput) {
+      destinationInput.addEventListener('change', this.onDestinationChange);
+    }
+  }
+
+  #handleTypeChange = (evt) => {
+    evt.preventDefault();
+    const newType = evt.target.value;
+    this.updateElement({
+      type: newType,
+      selectedOffersIds: []
+    });
+  };
+
+  #handleOfferChange = (evt) => {
+    const offerId = evt.target.name.split('-').pop();
+    const isChecked = evt.target.checked;
+
+    const newSelectedOffersIds = [...this._state.selectedOffersIds];
+
+    if (isChecked) {
+      newSelectedOffersIds.push(offerId);
+    } else {
+      const index = newSelectedOffersIds.indexOf(offerId);
+      if (index > -1) {
+        newSelectedOffersIds.splice(index, 1);
+      }
+    }
+
+    this.updateElement({ selectedOffersIds: newSelectedOffersIds });
+  };
+
+  #handleDestinationChange = (evt) => {
+    const destinationName = evt.target.value;
+    const newDestination = this.#allDestinations.find((dest) => dest.name === destinationName);
+
+    if (newDestination) {
+      this.#destination = newDestination;
+      this.updateElement({
+        destinationId: newDestination.id
+      });
+    }
+  };
+
+  reset(point) {
+    this._state = EditFormView.convertPointToState(point);
+    this.#destination = this.#allDestinations.find((dest) => dest.id === point.destinationId);
+    this.updateElement({});
   }
 }

@@ -2,6 +2,11 @@ import {render, replace, remove} from '../framework/render.js';
 import EventView from '../view/event-view.js';
 import EditFormView from '../view/edit-form-view.js';
 
+const Mode = {
+  DEFAULT: 'DEFAULT',
+  EDITING: 'EDITING',
+};
+
 export default class PointPresenter {
   #eventsListContainer = null;
   #pointComponent = null;
@@ -12,6 +17,7 @@ export default class PointPresenter {
   #model = null;
   #onDataChange = null;
   #onModeChange = null;
+  #mode = Mode.DEFAULT;
 
   constructor(eventsListContainer, model, onDataChange, onModeChange) {
     this.#eventsListContainer = eventsListContainer;
@@ -26,16 +32,6 @@ export default class PointPresenter {
     this.#offers = this.#model.getOffersByType(point.type)
       .filter((offer) => point.offersIds.includes(offer.id));
 
-    this.#renderPoint();
-  }
-
-  resetView() {
-    if (this.#editFormComponent) {
-      this.#replaceFormToPoint();
-    }
-  }
-
-  #renderPoint() {
     const prevPointComponent = this.#pointComponent;
 
     this.#pointComponent = new EventView(
@@ -56,44 +52,54 @@ export default class PointPresenter {
     this.#pointComponent.setEventListeners();
   }
 
+  resetView() {
+    if (this.#mode !== Mode.DEFAULT) {
+      this.#replaceFormToPoint();
+    }
+  }
+
   #replacePointToForm() {
-    const prevEditFormComponent = this.#editFormComponent;
+    this.#onModeChange();
+    this.#mode = Mode.EDITING;
 
     this.#editFormComponent = new EditFormView(
       this.#point,
       this.#destination,
-      this.#offers,
+      this.#model.getOffers(),
+      this.#model.getDestinations(),
       this.#handleFormSubmit,
-      this.#handleFormClose
+      this.#handleCloseClick
     );
 
-    if (prevEditFormComponent) {
-      replace(this.#editFormComponent, prevEditFormComponent);
-      remove(prevEditFormComponent);
-    } else {
-      replace(this.#editFormComponent, this.#pointComponent);
-    }
-
+    replace(this.#editFormComponent, this.#pointComponent);
     this.#editFormComponent.setEventListeners();
     document.addEventListener('keydown', this.#escKeyDownHandler);
   }
 
   #replaceFormToPoint() {
+    if (this.#editFormComponent === null) {
+      return;
+    }
+
     document.removeEventListener('keydown', this.#escKeyDownHandler);
-    this.#editFormComponent.element.replaceWith(this.#pointComponent.element);
-    remove(this.#editFormComponent);
+
+    const editFormComponent = this.#editFormComponent;
     this.#editFormComponent = null;
+    this.#mode = Mode.DEFAULT;
+
+    replace(this.#pointComponent, editFormComponent);
+    remove(editFormComponent);
   }
 
   #escKeyDownHandler = (evt) => {
-    if (evt.key === 'Escape') {
+    if (evt.key === 'Escape' || evt.key === 'Esc') {
       evt.preventDefault();
+      this.#editFormComponent.reset(this.#point);
       this.#replaceFormToPoint();
     }
   };
 
   #handleEditClick = () => {
-    this.#onModeChange();
     this.#replacePointToForm();
   };
 
@@ -107,20 +113,36 @@ export default class PointPresenter {
 
   #handleFormSubmit = (evt) => {
     evt.preventDefault();
+
+    const state = this.#editFormComponent._state;
+    const updatedPoint = {
+      ...this.#point,
+      type: state.type,
+      basePrice: state.basePrice,
+      dateFrom: state.dateFrom,
+      dateTo: state.dateTo,
+      isFavorite: state.isFavorite,
+      offersIds: state.selectedOffersIds,
+      destinationId: state.destinationId
+    };
+
+    this.#onDataChange(updatedPoint);
     this.#replaceFormToPoint();
   };
 
-  #handleFormClose = () => {
+  #handleCloseClick = () => {
+    this.#editFormComponent.reset(this.#point);
     this.#replaceFormToPoint();
   };
 
   destroy() {
     if (this.#pointComponent) {
-      this.#pointComponent.element.remove();
+      remove(this.#pointComponent);
     }
 
     if (this.#editFormComponent) {
-      this.#editFormComponent.element.remove();
+      remove(this.#editFormComponent);
+      document.removeEventListener('keydown', this.#escKeyDownHandler);
     }
   }
 }
