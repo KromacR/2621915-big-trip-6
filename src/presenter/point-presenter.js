@@ -42,7 +42,10 @@ export default class PointPresenter {
       this.#handleFavoriteClick
     );
 
-    if (prevPointComponent) {
+    if (prevPointComponent && this.#editFormComponent) {
+      replace(this.#pointComponent, prevPointComponent);
+      remove(prevPointComponent);
+    } else if (prevPointComponent) {
       replace(this.#pointComponent, prevPointComponent);
       remove(prevPointComponent);
     } else {
@@ -94,8 +97,10 @@ export default class PointPresenter {
   #escKeyDownHandler = (evt) => {
     if (evt.key === 'Escape' || evt.key === 'Esc') {
       evt.preventDefault();
-      this.#editFormComponent.reset(this.#point);
-      this.#replaceFormToPoint();
+      if (this.#editFormComponent) {
+        this.#editFormComponent.reset(this.#point);
+        this.#replaceFormToPoint();
+      }
     }
   };
 
@@ -131,8 +136,10 @@ export default class PointPresenter {
   };
 
   #handleCloseClick = () => {
-    this.#editFormComponent.reset(this.#point);
-    this.#replaceFormToPoint();
+    if (this.#editFormComponent) {
+      this.#editFormComponent.reset(this.#point);
+      this.#replaceFormToPoint();
+    }
   };
 
   destroy() {
@@ -141,6 +148,7 @@ export default class PointPresenter {
     }
 
     if (this.#editFormComponent) {
+      this.#editFormComponent.removeDatepickers();
       remove(this.#editFormComponent);
       document.removeEventListener('keydown', this.#escKeyDownHandler);
     }
