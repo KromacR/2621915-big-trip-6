@@ -1,5 +1,8 @@
 import AbstractView from '../framework/view/abstract-view.js';
+import dayjs from 'dayjs';
+import duration from 'dayjs/plugin/duration.js';
 
+dayjs.extend(duration);
 
 const createOfferTemplate = (offer) => `
   <li class="event__offer">
@@ -11,14 +14,15 @@ const createOfferTemplate = (offer) => `
 
 const createEventTemplate = (point, destination, pointOffers) => {
   const {type, basePrice, dateFrom, dateTo, isFavorite} = point;
-  const date = new Date(dateFrom);
-  const month = date.toLocaleString('en', {month: 'short'}).toUpperCase();
-  const day = date.getDate();
 
-  const startTime = new Date(dateFrom).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
-  const endTime = new Date(dateTo).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+  // Форматирование даты начала в формате "MMM D" (например, "MAR 18")
+  const formattedDate = dayjs(dateFrom).format('MMM D').toUpperCase();
 
-  const duration = calculateDuration(dateFrom, dateTo);
+  // Форматирование времени начала и конца
+  const startTime = dayjs(dateFrom).format('HH:mm');
+  const endTime = dayjs(dateTo).format('HH:mm');
+
+  const durationValue = calculateDuration(dateFrom, dateTo);
 
   const offersTemplate = pointOffers
     .map((offer) => createOfferTemplate(offer))
@@ -29,7 +33,7 @@ const createEventTemplate = (point, destination, pointOffers) => {
   return `
     <li class="trip-events__item">
       <div class="event">
-        <time class="event__date" datetime="${dateFrom.split('T')[0]}">${month} ${day}</time>
+        <time class="event__date" datetime="${dayjs(dateFrom).format('YYYY-MM-DD')}">${formattedDate}</time>
         <div class="event__type">
           <img class="event__type-icon" width="42" height="42" src="img/icons/${type}.png" alt="Event type icon">
         </div>
@@ -40,7 +44,7 @@ const createEventTemplate = (point, destination, pointOffers) => {
             &mdash;
             <time class="event__end-time" datetime="${dateTo}">${endTime}</time>
           </p>
-          <p class="event__duration">${duration}</p>
+          <p class="event__duration">${durationValue}</p>
         </div>
         <p class="event__price">
           &euro;&nbsp;<span class="event__price-value">${basePrice}</span>
@@ -64,19 +68,21 @@ const createEventTemplate = (point, destination, pointOffers) => {
 };
 
 function calculateDuration(dateFrom, dateTo) {
-  const start = new Date(dateFrom);
-  const end = new Date(dateTo);
-  const diff = end - start;
+  const start = dayjs(dateFrom);
+  const end = dayjs(dateTo);
+  const diffMinutes = end.diff(start, 'minute');
 
-  const hours = Math.floor(diff / (1000 * 60 * 60));
-  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+  const hours = Math.floor(diffMinutes / 60);
+  const minutes = diffMinutes % 60;
 
   if (hours === 0) {
     return `${minutes}M`;
   } else if (minutes === 0) {
     return `${hours}H`;
   } else {
-    return `${hours}H ${minutes}M`;
+    const formattedHours = String(hours).padStart(2, '0');
+    const formattedMinutes = String(minutes).padStart(2, '0');
+    return `${formattedHours}H ${formattedMinutes}M`;
   }
 }
 

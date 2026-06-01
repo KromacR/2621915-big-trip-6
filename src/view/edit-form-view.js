@@ -1,15 +1,7 @@
 import AbstractStatefulView from '../framework/view/abstract-stateful-view.js';
-
-function formatDate(dateString) {
-  const date = new Date(dateString);
-  const day = String(date.getDate()).padStart(2, '0');
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const year = String(date.getFullYear()).slice(2);
-  const hours = String(date.getHours()).padStart(2, '0');
-  const minutes = String(date.getMinutes()).padStart(2, '0');
-
-  return `${day}/${month}/${year} ${hours}:${minutes}`;
-}
+import flatpickr from 'flatpickr';
+import 'flatpickr/dist/flatpickr.min.css';
+import dayjs from 'dayjs';
 
 const createEditFormTemplate = (state, destination, allOffers) => {
   const {type, basePrice, dateFrom, dateTo, selectedOffersIds} = state;
@@ -34,6 +26,10 @@ const createEditFormTemplate = (state, destination, allOffers) => {
 
   const offersForType = allOffers.find((offerGroup) => offerGroup.type === type)?.offers || [];
   const offersTemplate = offersForType.map((offer) => createOfferSelectorTemplate(offer)).join('');
+
+  // Форматирование дат для отображения в input
+  const formattedDateFrom = dateFrom ? dayjs(dateFrom).format('DD/MM/YYYY HH:mm') : '';
+  const formattedDateTo = dateTo ? dayjs(dateTo).format('DD/MM/YYYY HH:mm') : '';
 
   return `
     <li class="trip-events__item">
@@ -112,10 +108,10 @@ const createEditFormTemplate = (state, destination, allOffers) => {
 
           <div class="event__field-group  event__field-group--time">
             <label class="visually-hidden" for="event-start-time-1">From</label>
-            <input class="event__input  event__input--time" id="event-start-time-1" type="text" name="event-start-time" value="${formatDate(dateFrom)}">
+            <input class="event__input  event__input--time" id="event-start-time-1" type="text" name="event-start-time" value="${formattedDateFrom}" placeholder="DD/MM/YYYY HH:mm">
             &mdash;
             <label class="visually-hidden" for="event-end-time-1">To</label>
-            <input class="event__input  event__input--time" id="event-end-time-1" type="text" name="event-end-time" value="${formatDate(dateTo)}">
+            <input class="event__input  event__input--time" id="event-end-time-1" type="text" name="event-end-time" value="${formattedDateTo}" placeholder="DD/MM/YYYY HH:mm">
           </div>
 
           <div class="event__field-group  event__field-group--price">
@@ -146,7 +142,7 @@ const createEditFormTemplate = (state, destination, allOffers) => {
             <div class="event__photos-container">
               <div class="event__photos-tape">
                 ${(destination.pictures || []).map((pic) => `
-                  <img class="event__photo" src="${pic.src}" alt="${pic.description}">
+                  <img class="event__photo" src="${pic.src}" alt="${pic.description || ''}">
                 `).join('')}
               </div>
             </div>
@@ -163,6 +159,8 @@ export default class EditFormView extends AbstractStatefulView {
   #onFormSubmit = null;
   #onCloseClick = null;
   #destination = null;
+  #datepickerFrom = null;
+  #datepickerTo = null;
 
   constructor(point, destination, allOffers, allDestinations, onFormSubmit, onCloseClick) {
     super();
@@ -226,6 +224,55 @@ export default class EditFormView extends AbstractStatefulView {
     if (destinationInput) {
       destinationInput.addEventListener('change', this.onDestinationChange);
     }
+
+    // Настройка flatpickr для даты начала
+    const startDateInput = this.element.querySelector('#event-start-time-1');
+    if (startDateInput) {
+      this.#datepickerFrom = flatpickr(startDateInput, {
+        enableTime: true,
+        dateFormat: 'd/m/Y H:i',
+        locale: {
+          firstDayOfWeek: 1
+        },
+        onChange: (selectedDates) => {
+          if (selectedDates[0]) {
+            const newDateFrom = dayjs(selectedDates[0]).format('YYYY-MM-DDTHH:mm');
+            this.updateElement({ dateFrom: newDateFrom });
+
+            // Обновляем minDate для даты конца
+            if (this.#datepickerTo) {
+              this.#datepickerTo.set('minDate', selectedDates[0]);
+            }
+          }
+        }
+      });
+    }
+
+    // Настройка flatpickr для даты конца
+    const endDateInput = this.element.querySelector('#event-end-time-1');
+    if (endDateInput) {
+      this.#datepickerTo = flatpickr(endDateInput, {
+        enableTime: true,
+        dateFormat: 'd/m/Y H:i',
+        locale: {
+          firstDayOfWeek: 1
+        },
+        onChange: (selectedDates) => {
+          if (selectedDates[0]) {
+            const newDateTo = dayjs(selectedDates[0]).format('YYYY-MM-DDTHH:mm');
+            this.updateElement({ dateTo: newDateTo });
+          }
+        }
+      });
+    }
+
+    // Устанавливаем начальные значения для datepicker
+    if (this.#datepickerFrom && this._state.dateFrom) {
+      this.#datepickerFrom.setDate(dayjs(this._state.dateFrom).toDate());
+    }
+    if (this.#datepickerTo && this._state.dateTo) {
+      this.#datepickerTo.setDate(dayjs(this._state.dateTo).toDate());
+    }
   }
 
   #handleTypeChange = (evt) => {
@@ -271,5 +318,29 @@ export default class EditFormView extends AbstractStatefulView {
     this._state = EditFormView.convertPointToState(point);
     this.#destination = this.#allDestinations.find((dest) => dest.id === point.destinationId);
     this.updateElement({});
+
+    // Обновляем значения datepicker при сбросе
+    if (this.#datepickerFrom && point.dateFrom) {
+      this.#datepickerFrom.setDate(dayjs(point.dateFrom).toDate());
+    }
+    if (this.#datepickerTo && point.dateTo) {
+      this.#datepickerTo.setDate(dayjs(point.dateTo).toDate());
+    }
+  }
+
+  removeDatepickers() {
+    if (this.#datepickerFrom) {
+      this.#datepickerFrom.destroy();
+      this.#datepickerFrom = null;
+    }
+    if (this.#datepickerTo) {
+      this.#datepickerTo.destroy();
+      this.#datepickerTo = null;
+    }
+  }
+
+  removeElement() {
+    this.removeDatepickers();
+    super.removeElement();
   }
 }
