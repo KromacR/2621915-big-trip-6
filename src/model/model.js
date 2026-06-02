@@ -1,10 +1,24 @@
-import {destinations, offers as offersData, points} from '../mock/mock-data';
+import {destinations, offers as offersData, points as pointsData} from '../mock/mock-data';
+import {UpdateType, UserAction} from '../const.js';
 
-class Model {
+export default class Model {
   constructor() {
     this.destinations = destinations;
     this.offers = offersData;
-    this.points = points;
+    this.points = [...pointsData];
+    this._observers = [];
+  }
+
+  addObserver(observer) {
+    this._observers.push(observer);
+  }
+
+  removeObserver(observer) {
+    this._observers = this._observers.filter((obs) => obs !== observer);
+  }
+
+  _notify(updateType, data) {
+    this._observers.forEach((observer) => observer(updateType, data));
   }
 
   getDestinations() {
@@ -32,6 +46,22 @@ class Model {
     const offers = this.getOffersByType(type);
     return offers.find((offer) => offer.id === offerId);
   }
-}
 
-export default Model;
+  addPoint(point) {
+    this.points = [point, ...this.points];
+    this._notify(UpdateType.MAJOR, {action: UserAction.ADD_POINT, point});
+  }
+
+  updatePoint(updatedPoint) {
+    const index = this.points.findIndex((point) => point.id === updatedPoint.id);
+    if (index !== -1) {
+      this.points[index] = updatedPoint;
+      this._notify(UpdateType.MINOR, {action: UserAction.UPDATE_POINT, point: updatedPoint});
+    }
+  }
+
+  deletePoint(pointId) {
+    this.points = this.points.filter((point) => point.id !== pointId);
+    this._notify(UpdateType.MAJOR, {action: UserAction.DELETE_POINT, pointId});
+  }
+}
