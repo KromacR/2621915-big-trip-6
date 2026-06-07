@@ -1,49 +1,69 @@
 import AbstractView from '../framework/view/abstract-view.js';
+import {FilterType} from '../const.js';
 
-const createFiltersTemplate = (currentFilter) => `
-  <form class="trip-filters" action="#" method="get">
-    <div class="trip-filters__filter">
-      <input id="filter-everything" class="trip-filters__filter-input  visually-hidden" type="radio" name="trip-filter" value="everything" data-filter-type="everything" ${currentFilter === 'everything' ? 'checked' : ''}>
-      <label class="trip-filters__filter-label" for="filter-everything">Everything</label>
-    </div>
+const FILTER_TITLES = {
+  [FilterType.EVERYTHING]: 'Everything',
+  [FilterType.FUTURE]: 'Future',
+  [FilterType.PRESENT]: 'Present',
+  [FilterType.PAST]: 'Past'
+};
 
-    <div class="trip-filters__filter">
-      <input id="filter-future" class="trip-filters__filter-input  visually-hidden" type="radio" name="trip-filter" value="future" data-filter-type="future" ${currentFilter === 'future' ? 'checked' : ''}>
-      <label class="trip-filters__filter-label" for="filter-future">Future</label>
-    </div>
+function createFilterItemTemplate(filterType, currentFilterType, filtersInfo, isDisabled) {
+  const isChecked = filterType === currentFilterType;
+  const isFilterDisabled = isDisabled || (filterType !== FilterType.EVERYTHING && filtersInfo[filterType] === 0);
 
-    <div class="trip-filters__filter">
-      <input id="filter-present" class="trip-filters__filter-input  visually-hidden" type="radio" name="trip-filter" value="present" data-filter-type="present" ${currentFilter === 'present' ? 'checked' : ''}>
-      <label class="trip-filters__filter-label" for="filter-present">Present</label>
-    </div>
+  return (`<div class="trip-filters__filter">
+    <input
+      id="filter-${filterType}"
+      class="trip-filters__filter-input visually-hidden"
+      type="radio"
+      name="trip-filter"
+      value="${filterType}"
+      ${isChecked ? 'checked' : ''}
+      ${isFilterDisabled ? 'disabled' : ''}
+    >
+    <label class="trip-filters__filter-label" for="filter-${filterType}">${FILTER_TITLES[filterType]}</label>
+  </div>`);
+}
 
-    <div class="trip-filters__filter">
-      <input id="filter-past" class="trip-filters__filter-input  visually-hidden" type="radio" name="trip-filter" value="past" data-filter-type="past" ${currentFilter === 'past' ? 'checked' : ''}>
-      <label class="trip-filters__filter-label" for="filter-past">Past</label>
-    </div>
+function createFilterTemplate(filtersInfo, currentFilterType, isDisabled) {
+  const filterItems = Object.values(FilterType)
+    .map((filterType) => createFilterItemTemplate(filterType, currentFilterType, filtersInfo, isDisabled))
+    .join('');
 
+  return (`<form class="trip-filters" action="#" method="get">
+    ${filterItems}
     <button class="visually-hidden" type="submit">Accept filter</button>
-  </form>
-`;
+  </form>`);
+}
 
-export default class FiltersView extends AbstractView {
-  constructor(currentFilter, onFilterChange) {
+export default class FilterView extends AbstractView {
+  #filtersInfo = null;
+  #currentFilterType = null;
+  #isDisabled = false;
+  #handleFilterTypeChange = null;
+
+  constructor({filtersInfo, currentFilterType, isDisabled = false, onFilterTypeChange}) {
     super();
-    this._currentFilter = currentFilter;
-    this._onFilterChange = onFilterChange;
+    this.#filtersInfo = filtersInfo;
+    this.#currentFilterType = currentFilterType;
+    this.#isDisabled = isDisabled;
+    this.#handleFilterTypeChange = onFilterTypeChange;
+
+    this.element.addEventListener('change', this.#filterTypeChangeHandler);
   }
 
   get template() {
-    return createFiltersTemplate(this._currentFilter);
+    return createFilterTemplate(this.#filtersInfo, this.#currentFilterType, this.#isDisabled);
   }
 
-  setEventListeners() {
-    const filterButtons = this.element.querySelectorAll('.trip-filters__filter-input');
-    filterButtons.forEach((button) => {
-      button.addEventListener('change', () => {
-        const filterType = button.dataset.filterType;
-        this._onFilterChange(filterType);
-      });
-    });
-  }
+  #filterTypeChangeHandler = (evt) => {
+    evt.preventDefault();
+
+    if (this.#isDisabled) {
+      return;
+    }
+
+    this.#handleFilterTypeChange(evt.target.value);
+  };
 }

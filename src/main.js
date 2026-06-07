@@ -1,13 +1,27 @@
-import MainPresenter from './presenter/main-presenter.js';
+import TripPresenter from './presenter/main-presenter.js';
 import FilterPresenter from './presenter/filter-presenter.js';
+import Model from './model/model.js';
 import FilterModel from './model/filter-model.js';
+import TripApiService from './api/trip-api-service.js';
 
-const filtersContainer = document.querySelector('.trip-controls__filters');
-const eventsContainer = document.querySelector('.trip-events');
+const AUTHORIZATION = `Basic ${Math.random().toString(36).slice(2)}`;
+const END_POINT = 'https://24.objects.htmlacademy.pro/big-trip';
 
+const tripApiService = new TripApiService(END_POINT, AUTHORIZATION);
+const pointsModel = new Model({apiService: tripApiService});
 const filterModel = new FilterModel();
-const mainPresenter = new MainPresenter(eventsContainer, filterModel);
-const filterPresenter = new FilterPresenter(filtersContainer, filterModel);
+
+const filterPresenter = new FilterPresenter({
+  filterContainer: document.querySelector('.trip-controls__filters'),
+  filterModel,
+  pointsModel
+});
+
+const tripPresenter = new TripPresenter({
+  pointsModel,
+  filterModel
+});
 
 filterPresenter.init();
-mainPresenter.init();
+tripPresenter.init();
+pointsModel.init();
