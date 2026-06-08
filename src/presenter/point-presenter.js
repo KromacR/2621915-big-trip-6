@@ -1,5 +1,5 @@
 import PointView from '../view/event-view.js';
-import EditPointView from '../view/edit-form-view.js';
+import EditPointView from '../view/edit-event-view.js';
 import {render, replace, remove} from '../framework/render.js';
 import {UserAction, UpdateType} from '../const.js';
 
@@ -37,17 +37,18 @@ export default class PointPresenter {
       point: this.#point,
       destinations: this.#destinations,
       offers: this.#offers,
-      onArrowClick: this.#handleArrowClick,
-      onFavoriteClick: this.#handleFavoriteClick,
+      onArrowClick: this.#arrowClickHandler,
+      onFavoriteClick: this.#favoriteClickHandler,
     });
 
     this.#pointEditComponent = new EditPointView({
       point: this.#point,
       destinations: this.#destinations,
       offers: this.#offers,
-      onFormSubmit: this.#handleFormSubmit,
-      onArrowClick: this.#handleEditArrowClick,
-      onDeleteClick: this.#handleDeleteClick,
+      onFormSubmit: this.#formSubmitHandler,
+      onArrowClick: this.#editArrowClickHandler,
+      onDeleteClick: this.#deleteClickHandler,
+      onCancelClick: this.#editArrowClickHandler,
     });
 
     if (prevPointComponent === null || prevPointEditComponent === null) {
@@ -129,17 +130,17 @@ export default class PointPresenter {
     }
   };
 
-  #handleArrowClick = () => {
+  #arrowClickHandler = () => {
     this.#handleModeChange();
     this.#replaceCardToForm();
   };
 
-  #handleEditArrowClick = () => {
+  #editArrowClickHandler = () => {
     this.#pointEditComponent.updateElement(this.#getResetFormState());
     this.#replaceFormToCard();
   };
 
-  #handleFormSubmit = (point) => {
+  #formSubmitHandler = (point) => {
     this.#handleDataChange(
       UserAction.UPDATE_POINT,
       UpdateType.MINOR,
@@ -147,7 +148,7 @@ export default class PointPresenter {
     );
   };
 
-  #handleDeleteClick = (point) => {
+  #deleteClickHandler = (point) => {
     this.#handleDataChange(
       UserAction.DELETE_POINT,
       UpdateType.MINOR,
@@ -162,7 +163,7 @@ export default class PointPresenter {
     };
   }
 
-  #handleFavoriteClick = () => {
+  #favoriteClickHandler = () => {
     this.#handleDataChange(
       UserAction.UPDATE_POINT,
       UpdateType.PATCH,

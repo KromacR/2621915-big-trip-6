@@ -1,4 +1,5 @@
 import AbstractView from '../framework/view/abstract-view.js';
+import he from 'he';
 
 function createInfoTemplate(infoData) {
   const { title, dates, totalCost } = infoData;
@@ -10,8 +11,8 @@ function createInfoTemplate(infoData) {
   return (
     `<section class="trip-main__trip-info  trip-info">
       <div class="trip-info__main">
-        <h1 class="trip-info__title">${title}</h1>
-        <p class="trip-info__dates">${dates.start}&nbsp;&mdash;&nbsp;${dates.end}</p>
+        <h1 class="trip-info__title">${he.encode(title)}</h1>
+        <p class="trip-info__dates">${he.encode(dates.start)}&nbsp;&mdash;&nbsp;${he.encode(dates.end)}</p>
       </div>
       <p class="trip-info__cost">Total: &euro;&nbsp;<span class="trip-info__cost-value">${totalCost}</span></p>
     </section>`

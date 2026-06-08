@@ -9,7 +9,7 @@ import AbstractView from '../framework/view/abstract-view.js';
 
 const encodeText = (value) => he.encode(String(value ?? ''));
 
-function createPointTemplate(point, destination, typeOffers) {
+function createEventTemplate(point, destination, typeOffers) {
   const {
     type,
     dateFrom,
@@ -101,7 +101,7 @@ export default class PointView extends AbstractView{
   get template() {
     const destination = this.#destinations.find((dest) => dest.id === this.#point.destination);
     const typeOffers = this.#offers[this.#point.type] || [];
-    return createPointTemplate(this.#point, destination, typeOffers);
+    return createEventTemplate(this.#point, destination, typeOffers);
   }
 
   #arrowClickHandler = (evt) => {

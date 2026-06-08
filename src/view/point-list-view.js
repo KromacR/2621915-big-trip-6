@@ -4,11 +4,7 @@ function createPointListTemplate() {
   return '<ul class="trip-events__list"></ul>';
 }
 
-export default class PointListView extends AbstractView{
-  constructor(){
-    super();
-  }
-
+export default class PointListView extends AbstractView {
   get template() {
     return createPointListTemplate();
   }
