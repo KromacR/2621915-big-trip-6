@@ -57,11 +57,6 @@ export default class Model extends Observable {
     this._notify(UpdateType.INIT);
   }
 
-  setPoints(updateType, points) {
-    this.#points = points;
-    this._notify(updateType);
-  }
-
   async updatePoint(updateType, update) {
     const response = await this.#apiService.updatePoint(update);
     const index = this.#points.findIndex((point) => point.id === response.id);
