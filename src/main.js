@@ -1,4 +1,4 @@
-import TripPresenter from './presenter/main-presenter.js';
+import MainPresenter from './presenter/main-presenter.js';
 import FilterPresenter from './presenter/filter-presenter.js';
 import Model from './model/model.js';
 import FilterModel from './model/filter-model.js';
@@ -17,7 +17,7 @@ const filterPresenter = new FilterPresenter({
   pointsModel
 });
 
-const tripPresenter = new TripPresenter({
+const tripPresenter = new MainPresenter({
   pointsModel,
   filterModel
 });

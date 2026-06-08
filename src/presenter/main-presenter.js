@@ -2,7 +2,7 @@ import SortView from '../view/sort-view.js';
 import TripPoint from '../view/trip-point-view.js';
 import PointListView from '../view/point-list-view.js';
 import PointPresenter from './point-presenter.js';
-import EditPointView from '../view/edit-form-view.js';
+import EditPointView from '../view/edit-event-view.js';
 import NoPointsView from '../view/no-points-view.js';
 import LoadingView from '../view/loading-view.js';
 import FailedLoadView from '../view/failed-load-view.js';
@@ -24,7 +24,7 @@ const TimeLimit = {
   UPPER_LIMIT: 1000
 };
 
-export default class TripPresenter {
+export default class MainPresenter {
   #pointPresenter = new Map();
   #pointsListContainer = null;
   #pointsModel = null;
