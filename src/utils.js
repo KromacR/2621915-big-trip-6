@@ -9,6 +9,9 @@ const TIME_FORMAT = 'HH:mm';
 const DATE_TIME_ATTRIBUTE_FORMAT = 'YYYY-MM-DDTHH:mm';
 const EDIT_FORM_DATE_FORMAT = 'DD/MM/YY HH:mm';
 const INFO_DATE_FORMAT = 'DD MMM';
+const MAX_VISIBLE_DESTINATIONS = 3;
+
+const isEscapeKey = (evt) => evt.key === 'Escape';
 
 const humanizePointDate = (date) => dayjs(date).format(DATE_FORMAT).toUpperCase();
 
@@ -51,7 +54,7 @@ const getInfoTitle = (points, destinations) => {
 
   destinationNames = destinationNames.filter((element) => element);
 
-  if (destinationNames.length <= 3) {
+  if (destinationNames.length <= MAX_VISIBLE_DESTINATIONS) {
     return destinationNames.join(' — ');
   }
 
@@ -107,6 +110,7 @@ const filter = {
 };
 
 export {
+  isEscapeKey,
   humanizePointDate,
   humanizePointTime,
   humanizeDateTime,

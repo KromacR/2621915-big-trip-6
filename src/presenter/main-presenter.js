@@ -10,6 +10,7 @@ import UiBlocker from '../framework/ui-blocker/ui-blocker.js';
 import {render, replace, remove, RenderPosition} from '../framework/render.js';
 import {EVENT_TYPES, FilterType, SortType, UpdateType, UserAction} from '../const.js';
 import {
+  isEscapeKey,
   filter,
   getInfoTitle,
   getInfoDates,
@@ -375,7 +376,7 @@ export default class MainPresenter {
   };
 
   #escKeyDownHandler = (evt) => {
-    if (evt.key === 'Escape') {
+    if (isEscapeKey(evt)) {
       evt.preventDefault();
       this.#closeNewPointForm();
     }
